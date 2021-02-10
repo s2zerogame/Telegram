@@ -4016,4 +4016,5 @@
     <string name="RemindDayAt">\'Herinner op\' d MMM \'om\' HH:mm</string>
     <string name="RemindDayYearAt">\'Herinner op\' d MMM yyyy \'om\' HH:mm</string>
     <string name="Enable">Inschakelen</string>
+    <string name="GroupsDeletedUndo">Grupper(%1$d) slettet.</string>
 </resources>

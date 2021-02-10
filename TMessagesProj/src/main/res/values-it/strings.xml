@@ -4016,4 +4016,5 @@
     <string name="RemindDayAt">\'Ricorda il\' d MMM \'alle\' HH:mm</string>
     <string name="RemindDayYearAt">\'Ricorda il\' d MMM yyyy \'alle\' HH:mm</string>
     <string name="Enable">Attiva</string>
+    <string name="GroupsDeletedUndo">Gruppi(%1$d) eliminati.</string>
 </resources>
