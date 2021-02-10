@@ -2000,7 +2000,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
 //                        }
                         getMessagesController().removeFilter(dialogFilter);
                         getMessagesStorage().deleteDialogFilter(dialogFilter);
-                      //  filterTabsView.commitCrossfade();
+                        //  filterTabsView.commitCrossfade();
                     });
                     AlertDialog alertDialog = builder.create();
                     showDialog(alertDialog);
@@ -3492,6 +3492,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     }
 
     private boolean scrollBarVisible = true;
+
     private void showScrollbars(boolean show) {
         if (viewPages == null || scrollBarVisible == show) {
             return;
@@ -3962,7 +3963,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 editText.setHintTextColor(Theme.getColor(Theme.key_actionBarDefaultSearchPlaceholder));
                 editText.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSearch));
             }
-            searchViewPager.setKeyboardHeight(((ContentView)fragmentView).getKeyboardHeight());
+            searchViewPager.setKeyboardHeight(((ContentView) fragmentView).getKeyboardHeight());
             parentLayout.getDrawerLayoutContainer().setAllowOpenDrawerBySwipe(true);
         } else {
             if (filterTabsView != null) {
@@ -3982,7 +3983,7 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             if (show) {
                 searchViewPager.setVisibility(View.VISIBLE);
                 searchViewPager.reset();
-                updateFiltersView(true, null, null,false);
+                updateFiltersView(true, null, null, false);
                 if (searchTabsView != null) {
                     searchTabsView.hide(false, false);
                     searchTabsView.setVisibility(View.VISIBLE);
@@ -5108,26 +5109,36 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                         if (action == clear && canClearCacheCount != 0) {
                             getMessagesController().deleteDialog(selectedDialog, 2, false);
                         } else {
-                            if (action == clear) {
-                                getMessagesController().deleteDialog(selectedDialog, 1, false);
-                            } else {
-                                if (chat != null) {
-                                    if (ChatObject.isNotInChat(chat)) {
-                                        getMessagesController().deleteDialog(selectedDialog, 0, false);
+                            UndoView _undoView = getUndoView();
+                            ArrayList<Long> selectedDialogsCopy = new ArrayList<>(selectedDialogs);
+
+                            _undoView.showWithAction(selectedDialogs, action == clear ? UndoView.ACTION_CLEAR : UndoView.ACTION_DELETE, () -> {
+                                for (int i = 0; i < selectedDialogsCopy.size(); i++) {
+                                    final long pSelectedDialog = selectedDialogsCopy.get(i);
+                                    if (action == clear) {
+                                        getMessagesController().deleteDialog(pSelectedDialog, 1, true);
                                     } else {
-                                        TLRPC.User currentUser = getMessagesController().getUser(getUserConfig().getClientUserId());
-                                        getMessagesController().deleteUserFromChat((int) -selectedDialog, currentUser, null);
-                                    }
-                                } else {
-                                    getMessagesController().deleteDialog(selectedDialog, 0, false);
-                                    if (isBot) {
-                                        getMessagesController().blockPeer((int) selectedDialog);
+                                        if (chat != null) {
+                                            if (ChatObject.isNotInChat(chat)) {
+                                                getMessagesController().deleteDialog(pSelectedDialog, 0, true);
+                                            } else {
+                                                TLRPC.User currentUser = getMessagesController().getUser(getUserConfig().getClientUserId());
+                                                getMessagesController().deleteUserFromChat((int) -pSelectedDialog, currentUser, null);
+                                            }
+                                        } else {
+                                            getMessagesController().deleteDialog(pSelectedDialog, 0, true);
+                                            if (isBot) {
+                                                getMessagesController().blockPeer((int) pSelectedDialog);
+                                            }
+                                        }
+                                        if (AndroidUtilities.isTablet()) {
+                                            getNotificationCenter().postNotificationName(NotificationCenter.closeChats, pSelectedDialog);
+                                        }
+                                        getMessagesController().checkIfFolderEmpty(folderId);
                                     }
                                 }
-                                if (AndroidUtilities.isTablet()) {
-                                    getNotificationCenter().postNotificationName(NotificationCenter.closeChats, selectedDialog);
-                                }
-                            }
+                            });
+                            a = count;
                         }
                     }
                 }
