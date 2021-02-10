@@ -15178,6 +15178,23 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (editingMessageObject == obj) {
                     hideFieldPanel(true);
                 }
+                for (int r = 0; r < messagesDict[loadIndex].size(); r++) {
+                    MessageObject chatMessage = messagesDict[loadIndex].valueAt(r);
+                    if (chatMessage.replyMessageObject != null && chatMessage.replyMessageObject.getId() == obj.getId()) {
+                        MessageObject updateMessage = new MessageObject(currentAccount, chatMessage.messageOwner, obj, false, false);
+                        int index = messages.indexOf(chatMessage);
+                        if (index >= 0) {
+                            updateMessage.stableId = chatMessage.stableId;
+                            updateMessage.replyMessageObject = null;
+                            updateMessage.messageOwner.reply_to = null;
+                            messages.set(index, updateMessage);
+                            messagesDict[loadIndex].put(chatMessage.getId(), updateMessage);
+                            if (chatAdapter != null) {
+                                chatAdapter.notifyItemChanged(chatAdapter.messagesStartRow + index);
+                            }
+                        }
+                    }
+                }
                 int index = messages.indexOf(obj);
                 if (index != -1) {
                     if (obj.scheduled) {
@@ -15352,6 +15369,26 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
             if (loadIndex == 0 && repliesMessagesDict.indexOfKey(messageObject.getId()) >= 0) {
                 repliesMessagesDict.put(messageObject.getId(), messageObject);
+            }
+            if (old != null) {
+                for (int r = 0; r < messagesDict[loadIndex].size(); r++) {
+                    MessageObject chatMessage = messagesDict[loadIndex].valueAt(r);
+                    if (chatMessage.replyMessageObject != null && chatMessage.replyMessageObject.getId() == old.getId()) {
+                        int index = messages.indexOf(chatMessage);
+
+                        if (index >= 0) {
+                            MessageObject updateMessage = new MessageObject(currentAccount, chatMessage.messageOwner, messageObject, false, false);
+                            updateMessage.replyMessageObject = messageObject;
+                            updateMessage.stableId = chatMessage.stableId;
+                            messages.set(index, updateMessage);
+
+                            messagesDict[loadIndex].put(chatMessage.getId(), updateMessage);
+                            if (chatAdapter != null) {
+                                chatAdapter.notifyItemChanged(chatAdapter.messagesStartRow + index);
+                            }
+                        }
+                    }
+                }
             }
             if (old == null || remove && old.messageOwner.date != messageObject.messageOwner.date) {
                 continue;
@@ -17268,7 +17305,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             chatActivityEnterView.setFieldFocused(false);
         }
         if (chatAttachAlert != null) {
-            if (!ignoreAttachOnPause){
+            if (!ignoreAttachOnPause) {
                 chatAttachAlert.onPause();
             } else {
                 ignoreAttachOnPause = false;
@@ -19462,7 +19499,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             for (int i = 0; i < n; i++) {
                 View child = chatListView.getChildAt(i);
                 if (child instanceof ChatMessageCell && ((ChatMessageCell) child).getMessageObject() == unreadMessageObject) {
-                    int unreadMessageIndex =  messages.indexOf(unreadMessageObject);
+                    int unreadMessageIndex = messages.indexOf(unreadMessageObject);
                     if (unreadMessageIndex >= 0) {
                         lastVisibleItem = chatAdapter.messagesStartRow + messages.indexOf(unreadMessageObject);
                         top = chatListView.getMeasuredHeight() - child.getBottom() - chatListView.getPaddingBottom();
@@ -21044,6 +21081,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             }
                         }
                     }
+
                     @Override
                     public void didPressInstantButton(ChatMessageCell cell, int type) {
                         MessageObject messageObject = cell.getMessageObject();
@@ -21739,7 +21777,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         @Override
         public void notifyItemMoved(int fromPosition, int toPosition) {
             if (BuildVars.LOGS_ENABLED) {
-                FileLog.d("notify item moved" + fromPosition + ":"  + toPosition);
+                FileLog.d("notify item moved" + fromPosition + ":" + toPosition);
             }
             if (!fragmentBeginToShow) {
                 chatListView.setItemAnimator(null);

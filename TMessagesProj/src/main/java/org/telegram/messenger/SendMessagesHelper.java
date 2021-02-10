@@ -415,7 +415,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 AndroidUtilities.cancelRunOnUIThread(locationQueryCancelRunnable);
             }
             locationQueryCancelRunnable = () -> {
-                if (locationQueryCancelRunnable != this) {
+                if (locationQueryCancelRunnable != this.locationQueryCancelRunnable) {
                     return;
                 }
                 if (delegate != null) {

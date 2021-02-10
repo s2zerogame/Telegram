@@ -996,6 +996,20 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
                 ((PhotoAttachPhotoCell) view).callDelegate();
             }
         });
+
+
+    }
+
+    private void addParentCaptionToFirstPhoto(MediaController.PhotoEntry object) {
+        object.caption = parentAlert.commentTextView.getText().toString();
+    }
+
+    public void updateFirstPhotoCaption() {
+        if (selectedPhotos.size() > 0 && selectedPhotosOrder.size() > 0) {
+            Object key = selectedPhotosOrder.get(0);
+            MediaController.PhotoEntry o = (MediaController.PhotoEntry) selectedPhotos.get(key);
+            addParentCaptionToFirstPhoto(o);
+        }
     }
 
     private int addToSelectedPhotos(MediaController.PhotoEntry object, int index) {
@@ -1005,6 +1019,15 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
             int position = selectedPhotosOrder.indexOf(key);
             if (position >= 0) {
                 selectedPhotosOrder.remove(position);
+            }
+            if (position == 0 && selectedPhotos.size() > 0 && selectedPhotosOrder.size() > 0) {
+                try {
+                    Object firstKey = selectedPhotosOrder.get(0);
+                    MediaController.PhotoEntry first = (MediaController.PhotoEntry) selectedPhotos.get(firstKey);
+                    addParentCaptionToFirstPhoto(first);
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
             }
             updatePhotosCounter(false);
             updateCheckedPhotoIndices();
@@ -1016,6 +1039,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         } else {
             selectedPhotos.put(key, object);
             selectedPhotosOrder.add(key);
+            addParentCaptionToFirstPhoto((MediaController.PhotoEntry) selectedPhotos.get(selectedPhotosOrder.get(0)));
             updatePhotosCounter(true);
             return -1;
         }
