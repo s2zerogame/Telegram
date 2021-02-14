@@ -55,7 +55,9 @@ import androidx.collection.ArrayMap;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.widget.NestedScrollView;
 import androidx.dynamicanimation.animation.DynamicAnimation;
 import androidx.dynamicanimation.animation.SpringAnimation;
@@ -6006,6 +6008,15 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             @Override
             protected void onDraw(Canvas canvas) {
                 videoPlayerSeekbar.draw(canvas);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    Rect excludes = new Rect(videoPlayerSeekbarView.getLeft(), videoPlayerSeekbarView.getTop() - 50,
+                            videoPlayerSeekbarView.getRight(), videoPlayerSeekbarView.getBottom() + 100);
+                    List<Rect> exclusionRects = new ArrayList<>(1);
+                    exclusionRects.add(excludes);
+
+                    ViewCompat.setSystemGestureExclusionRects(this, exclusionRects);
+                }
             }
         };
         videoPlayerSeekbarView.setAccessibilityDelegate(accessibilityDelegate);
@@ -6016,6 +6027,16 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         videoPlayerSeekbar.setHorizontalPadding(AndroidUtilities.dp(2));
         videoPlayerSeekbar.setColors(0x33ffffff, 0x33ffffff, Color.WHITE, Color.WHITE, Color.WHITE, 0x59ffffff);
         videoPlayerSeekbar.setDelegate(seekBarDelegate);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ViewCompat.setOnApplyWindowInsetsListener(videoPlayerSeekbarView, new OnApplyWindowInsetsListener() {
+                @Override
+                public WindowInsetsCompat onApplyWindowInsets(View v, WindowInsetsCompat insets) {
+                    v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), insets.getMandatorySystemGestureInsets().bottom);
+                    return insets;
+                }
+            });
+        }
 
         videoPreviewFrame = new VideoSeekPreviewImage(containerView.getContext(), () -> {
             if (needShowOnReady) {
