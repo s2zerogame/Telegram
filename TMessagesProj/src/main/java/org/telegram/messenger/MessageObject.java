@@ -64,7 +64,9 @@ public class MessageObject {
     public static final int MESSAGE_SEND_STATE_SEND_ERROR = 2;
     public static final int MESSAGE_SEND_STATE_EDITING = 3;
 
+    public static final int TYPE_SIMPLE_TEXT = 0;
     public static final int TYPE_PHOTO = 1;
+    public static final int TYPE_AUDIO = 2;
     public static final int TYPE_VIDEO = 3;
     public static final int TYPE_ROUND_VIDEO = 5;
     public static final int TYPE_STICKER = 13;
@@ -435,8 +437,8 @@ public class MessageObject {
                     isOut = messageObject.isOutOwner();
                     needShare = !isOut && (
                             messageObject.messageOwner.fwd_from != null && messageObject.messageOwner.fwd_from.saved_from_peer != null ||
-                            messageObject.messageOwner.from_id instanceof TLRPC.TL_peerUser && (messageObject.messageOwner.peer_id.channel_id != 0 || messageObject.messageOwner.peer_id.chat_id != 0 ||
-                            messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGame || messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaInvoice)
+                                    messageObject.messageOwner.from_id instanceof TLRPC.TL_peerUser && (messageObject.messageOwner.peer_id.channel_id != 0 || messageObject.messageOwner.peer_id.chat_id != 0 ||
+                                            messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGame || messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaInvoice)
                     );
                     if (messageObject.isMusic() || messageObject.isDocument()) {
                         isDocuments = true;
@@ -4104,16 +4106,16 @@ public class MessageObject {
 
         boolean useManualParse = !hasEntities && (
                 eventId != 0 ||
-                messageOwner instanceof TLRPC.TL_message_old ||
-                messageOwner instanceof TLRPC.TL_message_old2 ||
-                messageOwner instanceof TLRPC.TL_message_old3 ||
-                messageOwner instanceof TLRPC.TL_message_old4 ||
-                messageOwner instanceof TLRPC.TL_messageForwarded_old ||
-                messageOwner instanceof TLRPC.TL_messageForwarded_old2 ||
-                messageOwner instanceof TLRPC.TL_message_secret ||
-                messageOwner.media instanceof TLRPC.TL_messageMediaInvoice ||
-                isOut() && messageOwner.send_state != MESSAGE_SEND_STATE_SENT ||
-                messageOwner.id < 0 || messageOwner.media instanceof TLRPC.TL_messageMediaUnsupported);
+                        messageOwner instanceof TLRPC.TL_message_old ||
+                        messageOwner instanceof TLRPC.TL_message_old2 ||
+                        messageOwner instanceof TLRPC.TL_message_old3 ||
+                        messageOwner instanceof TLRPC.TL_message_old4 ||
+                        messageOwner instanceof TLRPC.TL_messageForwarded_old ||
+                        messageOwner instanceof TLRPC.TL_messageForwarded_old2 ||
+                        messageOwner instanceof TLRPC.TL_message_secret ||
+                        messageOwner.media instanceof TLRPC.TL_messageMediaInvoice ||
+                        isOut() && messageOwner.send_state != MESSAGE_SEND_STATE_SENT ||
+                        messageOwner.id < 0 || messageOwner.media instanceof TLRPC.TL_messageMediaUnsupported);
 
         if (useManualParse) {
             addLinks(isOutOwner(), messageText, true, true);

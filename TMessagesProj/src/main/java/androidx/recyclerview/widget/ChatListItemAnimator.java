@@ -14,10 +14,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
 
+
+import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.FileLog;
 import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.MessageObject;
+import org.telegram.ui.AnimationEditorActivity;
 import org.telegram.ui.Cells.BotHelpCell;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.ChatActivity;
@@ -34,6 +37,8 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
 
     private final ChatActivity activity;
     private final RecyclerListView recyclerListView;
+    private long moveDuration = 220;
+
 
     private HashMap<Integer, MessageObject.GroupedMessages> willRemovedGroup = new HashMap<>();
     private ArrayList<MessageObject.GroupedMessages> willChangedGroups = new ArrayList<>();
@@ -57,6 +62,11 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
             listView.getElevation();
         }
     }
+
+    public long getDuration() {
+        return moveDuration;
+    }
+
 
     @Override
     public void runPendingAnimations() {
@@ -207,26 +217,36 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
             animateRemoveImpl(holder);
         }
         mPendingRemovals.clear();
-        if (movesPending) {
-            final ArrayList<MoveInfo> moves = new ArrayList<>();
-            moves.addAll(mPendingMoves);
-            mPendingMoves.clear();
-            for (MoveInfo moveInfo : moves) {
-                animateMoveImpl(moveInfo.holder, moveInfo);
-            }
-            moves.clear();
-        }
 
         if (additionsPending) {
             final ArrayList<RecyclerView.ViewHolder> additions = new ArrayList<>();
             additions.addAll(mPendingAdditions);
+            // isNewItemAdded = mPendingAdditions.size() == 1;
             mPendingAdditions.clear();
 
             for (RecyclerView.ViewHolder holder : additions) {
                 animateAddImpl(holder, addedItemsHeight);
             }
+            //  isNewItemAdded = false;
             additions.clear();
         }
+
+
+        if (movesPending) {
+            final ArrayList<MoveInfo> moves = new ArrayList<>();
+            moves.addAll(mPendingMoves);
+            mPendingMoves.clear();
+            for (MoveInfo moveInfo : moves) {
+//                moveInfo.fromY+= activity.getChatActivityEnterView().getAnimatedTop();
+//                moveInfo.toY+= activity.getChatActivityEnterView().getAnimatedTop();
+                moveInfo.holder.itemView.setTranslationY(addedItemsHeight + activity.getChatActivityEnterView().getAnimatedTop()
+                        - activity.getChatActivityEnterTopView().getReplyView().getHeight());
+                animateMoveImpl(moveInfo.holder, moveInfo);
+            }
+            moves.clear();
+        }
+
+
     }
 
     @Override
@@ -271,43 +291,345 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
     }
 
     public void animateAddImpl(final RecyclerView.ViewHolder holder, int addedItemsHeight) {
+
         final View view = holder.itemView;
-        final ViewPropertyAnimator animation = view.animate();
         mAddAnimations.add(holder);
         view.setTranslationY(addedItemsHeight);
         holder.itemView.setScaleX(1);
         holder.itemView.setScaleY(1);
+
+        float savePivot_x = view.getPivotX();
+        float savePivot_y = view.getPivotY();
+
+        AnimatorSet animatorSet = new AnimatorSet();
+
+
         if (!(holder.itemView instanceof ChatMessageCell && ((ChatMessageCell) holder.itemView).getTransitionParams().ignoreAlpha)) {
             holder.itemView.setAlpha(1);
         }
-        animation.translationY(0).setDuration(getMoveDuration())
-                .setInterpolator(translationInterpolator)
-                .setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationStart(Animator animator) {
-                        dispatchAddStarting(holder);
+
+        if (holder.itemView instanceof ChatMessageCell) {
+
+            final AnimationEditorActivity.AnimationSettings animationSettings = activity.getAnimationSettings();
+            final ChatMessageCell cell = (ChatMessageCell) holder.itemView;
+            ChatMessageCell.TransitionParams params = cell.getTransitionParams();
+
+
+            if (holder.getAdapterPosition() == 0 && cell.getMessageObject().isOut()) {
+                params.bgAlpha = 0;
+                view.setTranslationY(view.getHeight());
+
+
+                if (cell.getMessageObject().isAnimatedEmoji() || cell.getMessageObject().isDice()) {
+                    ImageReceiver imageReceiver = cell.getPhotoImage();
+                    if (imageReceiver != null) {
+                        imageReceiver.setAutoRepeat(3);
+                        imageReceiver.stopAnimation();
                     }
 
-                    @Override
-                    public void onAnimationCancel(Animator animator) {
-                        view.setTranslationY(0);
-                        if (view instanceof ChatMessageCell) {
-                            ((ChatMessageCell) view).getTransitionParams().messageEntering = false;
-                        }
+                    float emojiSize = AndroidUtilities.dp(30);
+                    float scaleX = (emojiSize) / (float) (cell.getHeight() != 0 ? cell.getHeight() : 1);
+                    float scaleY = scaleX;
+
+                    cell.setPivotY(0);
+                    cell.setPivotX(0);
+                    cell.setTranslationY(cell.getHeight() + emojiSize / 2);
+                    cell.setTranslationX(0);
+                    cell.setScaleY(scaleY);
+                    cell.setScaleX(scaleX);
+
+                    ValueAnimator valueAnimator_X = animationSettings.emoji.x.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_X, 0));
+                    ValueAnimator valueAnimator_Y = animationSettings.emoji.y.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_Y, 0));
+                    ValueAnimator valueAnimator_Scale_X = animationSettings.emoji.scale.fillValueAnimator(ObjectAnimator.ofFloat(view, view.SCALE_X, 1));
+                    ValueAnimator valueAnimator_Scale_Y = animationSettings.emoji.scale.fillValueAnimator(ObjectAnimator.ofFloat(view, view.SCALE_Y, 1));
+
+                    ValueAnimator valueAnimator_Opacity = animationSettings.emoji.opacity.fillValueAnimator(ValueAnimator.ofFloat(0, 1));
+                    valueAnimator_Opacity.addUpdateListener(v -> {
+                        params.bgAlpha = (float) v.getAnimatedValue();
+                        view.invalidate();
+                    });
+
+                    moveDuration = animationSettings.emoji.duration;
+                    animatorSet.playTogether(valueAnimator_X, valueAnimator_Y, valueAnimator_Opacity, valueAnimator_Scale_X, valueAnimator_Scale_Y);
+
+
+                } else if (cell.getMessageObject().isSticker() || cell.getMessageObject().isAnimatedSticker()) {
+                    View lastSelectedSticker = activity.getChatActivityEnterView().lastSelectedSticker;
+                    if (lastSelectedSticker != null) {
+                        activity.getChatActivityEnterView().lastSelectedSticker = null;
+
+                        float h = activity.getChatActivityEnterView().getEditField().getHeight();
+                        view.setAlpha(1);
+
+                        float scaleX = lastSelectedSticker.getWidth() / (float) (cell.backgroundWidth != 0 ? cell.backgroundWidth : 1);
+                        float scaleY = lastSelectedSticker.getHeight() / (float) (cell.getHeight() != 0 ? cell.getHeight() : 1);
+
+
+                        cell.setPivotY(0);
+                        cell.setPivotX(0);
+                        cell.setScaleY(scaleY);
+                        cell.setScaleX(scaleX);
+
+                        cell.setTranslationY(lastSelectedSticker.getY() + h + cell.getHeight());
+                        cell.setTranslationX(lastSelectedSticker.getX() - lastSelectedSticker.getWidth());
+
+                        ValueAnimator valueAnimator_X = animationSettings.sticker.x.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_X, 0));
+                        ValueAnimator valueAnimator_Y = animationSettings.sticker.y.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_Y, 0));
+                        ValueAnimator valueAnimator_Scale_X = animationSettings.sticker.scale.fillValueAnimator(ObjectAnimator.ofFloat(view, view.SCALE_X, 1));
+                        ValueAnimator valueAnimator_Scale_Y = animationSettings.sticker.scale.fillValueAnimator(ObjectAnimator.ofFloat(view, view.SCALE_Y, 1));
+
+                        ValueAnimator valueAnimator_Opacity = animationSettings.sticker.opacity.fillValueAnimator(ValueAnimator.ofFloat(0, 1));
+                        valueAnimator_Opacity.addUpdateListener(v -> {
+                            params.bgAlpha = (float) v.getAnimatedValue();
+                            view.invalidate();
+                        });
+
+                        moveDuration = animationSettings.sticker.duration;
+                        animatorSet.playTogether(valueAnimator_X, valueAnimator_Y, valueAnimator_Opacity, valueAnimator_Scale_X, valueAnimator_Scale_Y);
+                    }
+                }
+                else if (cell.getMessageObject().isGif()) {
+                    View lastSelectedGif = activity.getChatActivityEnterView().lastSelectedGif;
+                    if (lastSelectedGif != null) {
+                        activity.getChatActivityEnterView().lastSelectedGif = null;
+
+                        float h = activity.getChatActivityEnterView().getEditField().getHeight();
+                        view.setAlpha(1);
+
+                        float scaleX = lastSelectedGif.getWidth() / (float) (cell.backgroundWidth != 0 ? cell.backgroundWidth : 1);
+                        float scaleY = lastSelectedGif.getHeight() / (float) (cell.getHeight() != 0 ? cell.getHeight() : 1);
+
+                        cell.setPivotY(0);
+                        cell.setPivotX(0);
+
+                        cell.setTranslationY(lastSelectedGif.getY() + h + cell.getHeight());
+                        cell.setTranslationX(lastSelectedGif.getX() );
+
+                        cell.setScaleY(scaleY);
+                        cell.setScaleX(scaleX);
+
+
+
+                        ValueAnimator valueAnimator_X = animationSettings.gif.x.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_X, 0));
+                        ValueAnimator valueAnimator_Y = animationSettings.gif.y.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_Y, 0));
+                        ValueAnimator valueAnimator_Scale_X = animationSettings.gif.scale.fillValueAnimator(ObjectAnimator.ofFloat(view, view.SCALE_X, 1));
+                        ValueAnimator valueAnimator_Scale_Y = animationSettings.gif.scale.fillValueAnimator(ObjectAnimator.ofFloat(view, view.SCALE_Y, 1));
+
+                        moveDuration = animationSettings.gif.duration;
+                        animatorSet.playTogether(valueAnimator_X, valueAnimator_Y, valueAnimator_Scale_X, valueAnimator_Scale_Y);
+                    }
+                } else if (cell.getMessageObject().type == MessageObject.TYPE_AUDIO) {
+                    params.deltaLeft = 0;
+                    // ValueAnimator valueAnimator_X = animationSettings.audio.x.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_X, 0));
+                    ValueAnimator valueAnimator_Y = animationSettings.audio.y.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_Y, 0));
+                    ValueAnimator valueAnimator_Opacity = animationSettings.audio.opacity.fillValueAnimator(ValueAnimator.ofFloat(0, 1));
+                    valueAnimator_Opacity.addUpdateListener(v -> {
+                        params.bgAlpha = (float) v.getAnimatedValue();
+                        view.invalidate();
+                    });
+
+                    moveDuration = animationSettings.audio.duration;
+                    animatorSet.playTogether(valueAnimator_Y, valueAnimator_Opacity);
+                } else if (cell.getMessageObject().isRoundVideo()) {
+                    cell.setPivotY(0);
+                    cell.setPivotX(0);
+                    view.setScaleX(1);
+                    view.setScaleY(1);
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                        view.setElevation(AndroidUtilities.dp(1));
+                    }
+                    view.setTranslationX(-params.startX);
+                    view.setTranslationY(-params.startY);
+                    ValueAnimator valueAnimator_X = animationSettings.video.x.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_X, 0));
+                    ValueAnimator valueAnimator_Y = animationSettings.video.y.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_Y, 0));
+                    ValueAnimator valueAnimator_Scale_X = animationSettings.video.scale.fillValueAnimator(ObjectAnimator.ofFloat(view, view.SCALE_X, 1));
+                    ValueAnimator valueAnimator_Scale_Y = animationSettings.video.scale.fillValueAnimator(ObjectAnimator.ofFloat(view, view.SCALE_Y, 1));
+
+                    ValueAnimator valueAnimator_Opacity = animationSettings.video.opacity.fillValueAnimator(ValueAnimator.ofFloat(0, 1));
+                    valueAnimator_Opacity.addUpdateListener(v -> {
+                        params.bgAlpha = (float) v.getAnimatedValue();
+                        view.invalidate();
+                    });
+
+                    moveDuration = animationSettings.video.duration;
+                    animatorSet.playTogether(valueAnimator_X, valueAnimator_Y, valueAnimator_Opacity, valueAnimator_Scale_X, valueAnimator_Scale_Y);
+
+                } else if (cell.getMessageObject().type == MessageObject.TYPE_PHOTO) {
+
+                    ValueAnimator valueAnimator_X = animationSettings.photo.x.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_X, 0));
+                    ValueAnimator valueAnimator_Y = animationSettings.photo.y.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_Y, 0));
+
+                    ValueAnimator valueAnimator_Opacity = animationSettings.photo.opacity.fillValueAnimator(ValueAnimator.ofFloat(0, 1));
+                    valueAnimator_Opacity.addUpdateListener(v -> {
+                        params.bgAlpha = (float) v.getAnimatedValue();
+                        view.invalidate();
+                    });
+
+                    moveDuration = animationSettings.photo.duration;
+                    animatorSet.playTogether(valueAnimator_X, valueAnimator_Y, valueAnimator_Opacity);
+
+                } else if (cell.getMessageObject().type == MessageObject.TYPE_SIMPLE_TEXT
+                        && (cell.getMessageObject().textHeight > (activity.getChatActivityEnterView().getEditField().getLineHeight() * activity.getChatActivityEnterView().getEditField().getMaxLines())
+                        || (addedItemsHeight > Math.abs(activity.getChatActivityEnterView().getAnimatedTop()) && activity.getChatActivityEnterView().getAnimatedTop() != 0)))
+                {
+                    int animTop = Math.abs(activity.getChatActivityEnterView().getAnimatedTop());
+                    cell.setTranslationY(animTop + activity.getChatActivityEnterView().getEditField().getHeight());
+                    final int clipHeight = activity.getChatActivityEnterView().getEditField().getLineHeight()
+                            * activity.getChatActivityEnterView().getEditField().getMaxLines()
+                            + activity.getChatActivityEnterTopView().getReplyView().getHeight();
+
+                    params.clipHeight = clipHeight;
+
+                    params.targetDeltaLeft = cell.backgroundWidth - recyclerListView.getWidth() + AndroidUtilities.dp(48);
+                    params.deltaLeft = 0;
+                    view.setTranslationY(activity.getChatActivityEnterView().getTextFieldContainer().getHeight());
+
+                    ValueAnimator valueAnimator_X = animationSettings.longText.x.fillValueAnimator(ValueAnimator.ofFloat(0, params.targetDeltaLeft));
+                    valueAnimator_X.addUpdateListener(v -> {
+                        params.deltaLeft = (int) (params.targetDeltaLeft - params.targetDeltaLeft * v.getAnimatedFraction());
+                        view.invalidate();
+                    });
+                    valueAnimator_X.setStartDelay((long) animationSettings.longText.x.delay);
+
+                    ValueAnimator valueAnimator_clip = ValueAnimator.ofInt(clipHeight, cell.getHeight());
+                    valueAnimator_clip.addUpdateListener(v -> {
+                        params.clipHeight = (int) v.getAnimatedValue();
+                        view.invalidate();
+                    });
+                    valueAnimator_clip.setDuration(animationSettings.longText.duration);
+
+                    ValueAnimator valueAnimator_Y = animationSettings.longText.y.fillValueAnimator(ObjectAnimator.ofFloat(view, view.TRANSLATION_Y, 0));
+
+                    ValueAnimator valueAnimator_Opacity = animationSettings.longText.y.fillValueAnimator(ValueAnimator.ofFloat(0.5f, 1));
+                    valueAnimator_Opacity.addUpdateListener(v -> {
+                        params.bgAlpha = (float) v.getAnimatedValue();
+                        view.invalidate();
+                    });
+
+                    moveDuration = animationSettings.longText.duration;
+                    animatorSet.setDuration(animationSettings.longText.duration);
+                    animatorSet.playTogether(valueAnimator_X, valueAnimator_clip, valueAnimator_Y, valueAnimator_Opacity);
+
+                } else if (cell.getMessageObject().type == MessageObject.TYPE_SIMPLE_TEXT) {
+
+                    params.targetDeltaLeft = cell.backgroundWidth - recyclerListView.getWidth() + AndroidUtilities.dp(48);
+                    params.deltaLeft = params.targetDeltaLeft;
+                    view.setTranslationY(view.getHeight() + activity.getChatActivityEnterView().getAnimatedTop());
+                    if (activity.getChatActivityEnterTopView().getReplyView() != null) {
+
+                        view.setTranslationY(activity.getChatActivityEnterView().getTextFieldContainer().getHeight());
                     }
 
-                    @Override
-                    public void onAnimationEnd(Animator animator) {
-                        if (view instanceof ChatMessageCell) {
-                            ((ChatMessageCell) view).getTransitionParams().messageEntering = false;
-                        }
-                        animation.setListener(null);
-                        if (mAddAnimations.remove(holder)) {
-                            dispatchAddFinished(holder);
-                            dispatchFinishedWhenDone();
-                        }
+
+                    ValueAnimator valueAnimator_X = animationSettings.shortText.x.fillValueAnimator(ValueAnimator.ofFloat(0, params.targetDeltaLeft));
+                    valueAnimator_X.addUpdateListener(v -> {
+                        params.deltaLeft = (int) (params.targetDeltaLeft - params.targetDeltaLeft * v.getAnimatedFraction());
+                        view.invalidate();
+                    });
+                    //   valueAnimator_X.setStartDelay((long) animationSettings.shortText.x.delay);
+
+                    ValueAnimator valueAnimator_Y = animationSettings.shortText.y.fillValueAnimator(ObjectAnimator.ofFloat(view, View.TRANSLATION_Y, 0));
+                    valueAnimator_Y.setStartDelay((long) animationSettings.shortText.y.delay);
+
+                    ValueAnimator valueAnimator_Opacity = animationSettings.shortText.opacity.fillValueAnimator(ValueAnimator.ofFloat(0.5f, 1));
+                    valueAnimator_Opacity.addUpdateListener(v -> {
+                        params.bgAlpha = (float) v.getAnimatedValue();
+                        view.invalidate();
+                    });
+                    valueAnimator_Opacity.setStartDelay((long) animationSettings.shortText.opacity.delay);
+
+                    moveDuration = animationSettings.shortText.duration;
+
+                    animatorSet.playTogether(valueAnimator_X, valueAnimator_Y, valueAnimator_Opacity);
+
+                } else {
+                    view.setTranslationY(addedItemsHeight);
+                    holder.itemView.setScaleX(1);
+                    holder.itemView.setScaleY(1);
+
+                    animatorSet.playTogether(ObjectAnimator.ofFloat(view, view.TRANSLATION_Y, 0));
+                    animatorSet.setDuration(getMoveDuration());
+                }
+                view.invalidate();
+            } else {
+
+                view.setTranslationY(0);
+                params.messageEntering = false;
+            }
+        }
+
+        animatorSet.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationStart(Animator animator) {
+                dispatchAddStarting(holder);
+                if (view instanceof ChatMessageCell) {
+                    ChatMessageCell.TransitionParams params = ((ChatMessageCell) view).getTransitionParams();
+                    params.keepOnTop = true;
+
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    activity.getChatListView().setElevation(AndroidUtilities.dp(1));
+                }
+            }
+
+            @Override
+            public void onAnimationCancel(Animator animator) {
+                view.setTranslationY(0);
+                if (activity.getChatActivityEnterTopView().getReplyView() != null) {
+                    activity.getChatActivityEnterTopView().getReplyView().setVisibility(View.VISIBLE);
+                }
+
+                if (view instanceof ChatMessageCell) {
+                    ChatMessageCell.TransitionParams params = ((ChatMessageCell) view).getTransitionParams();
+                    params.messageEntering = false;
+                    params.deltaLeft = 0;
+                    params.keepOnTop = false;
+                }
+            }
+
+            @Override
+            public void onAnimationEnd(Animator animator) {
+                if (activity.getChatActivityEnterTopView().getReplyView() != null) {
+                    activity.getChatActivityEnterTopView().getReplyView().setVisibility(View.VISIBLE);
+                }
+
+                if (view instanceof ChatMessageCell) {
+                    ChatMessageCell cell = ((ChatMessageCell) view);
+                    ChatMessageCell.TransitionParams params = cell.getTransitionParams();
+                    params.messageEntering = false;
+                    params.deltaLeft = 0;
+                    params.targetDeltaLeft = Integer.MIN_VALUE;
+                    params.keepOnTop = false;
+                    params.bgAlpha = 1f;
+                    params.clipHeight = Integer.MAX_VALUE;
+                    view.setPivotX(savePivot_x);
+                    view.setPivotY(savePivot_y);
+                    ImageReceiver imageReceiver = cell.getPhotoImage();
+                    if (imageReceiver != null) {
+                        imageReceiver.startAnimation();
                     }
-                }).start();
+                    view.invalidate();
+                }
+
+                if (mAddAnimations.remove(holder)) {
+                    dispatchAddFinished(holder);
+                    dispatchFinishedWhenDone();
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                    view.setElevation(AndroidUtilities.dp(0));
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && mAddAnimations.size() == 0) {
+                    activity.getChatListView().setElevation(AndroidUtilities.dp(0));
+                    moveDuration = 220;
+                }
+            }
+        });
+
+        animatorSet.start();
+        activity.getAnimatedBackground().setScrollAnimate(addedItemsHeight, moveDuration);
     }
 
     @Override
@@ -315,6 +637,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("animate remove");
         }
+        //  moveDuration = 50;
         boolean rez = super.animateRemove(holder, info);
         if (rez) {
             if (info != null) {
@@ -835,6 +1158,10 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
         if (oldHolder == newHolder) {
             // Don't know how to run change animations when the same view holder is re-used.
             // run a move animation to handle position changes.
+            if (mAddAnimations.contains(oldHolder)) {
+                dispatchAnimationFinished(newHolder);
+                return true;
+            }
             return animateMove(oldHolder, info, fromX, fromY, toX, toY);
         }
         final float prevTranslationX;
@@ -1376,7 +1703,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
 
     @Override
     public long getMoveDuration() {
-        return 220;
+        return moveDuration;
     }
 
     @Override

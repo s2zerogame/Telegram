@@ -313,6 +313,11 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private ChatAttachAlertLocationLayout locationLayout;
     private ChatAttachAlertDocumentLayout documentLayout;
     private AttachAlertLayout[] layouts = new AttachAlertLayout[6];
+
+    public AttachAlertLayout getCurrentAttachLayout() {
+        return currentAttachLayout;
+    }
+
     private AttachAlertLayout currentAttachLayout;
     private AttachAlertLayout nextAttachLayout;
 
@@ -1401,7 +1406,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             @Override
             protected void bottomPanelTranslationY(float translation) {
                 bottomPannelTranslation = translation;
-           //     buttonsRecyclerView.setTranslationY(translation);
+                //     buttonsRecyclerView.setTranslationY(translation);
                 frameLayout2.setTranslationY(translation);
                 writeButtonContainer.setTranslationY(translation);
                 selectedCountView.setTranslationY(translation);
@@ -1448,9 +1453,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         captionLimitView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteGrayText));
                     }
                 } else {
-                    if(photoLayout != null) {
-                        photoLayout.updateFirstPhotoCaption();
-                    }
                     captionLimitView.animate().alpha(0).scaleX(0.5f).scaleY(0.5f).setDuration(100).setListener(new AnimatorListenerAdapter() {
                         @Override
                         public void onAnimationEnd(Animator animation) {
@@ -1702,10 +1704,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             calcMandatoryInsets = chatActivity.isKeyboardVisible();
         }
         openTransitionFinished = false;
-    }
-
-    public void updateCaption(CharSequence caption){
-        commentTextView.setText(caption);
     }
 
     public void setEditingMessageObject(MessageObject messageObject) {
@@ -2622,7 +2620,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             typeButtonsAvailable = true;
         }
     }
-
 
     public void setMaxSelectedPhotos(int value, boolean order) {
         if (editingMessageObject != null) {
