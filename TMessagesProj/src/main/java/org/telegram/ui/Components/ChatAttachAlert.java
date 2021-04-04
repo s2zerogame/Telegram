@@ -313,6 +313,11 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private ChatAttachAlertLocationLayout locationLayout;
     private ChatAttachAlertDocumentLayout documentLayout;
     private AttachAlertLayout[] layouts = new AttachAlertLayout[6];
+
+    public AttachAlertLayout getCurrentAttachLayout() {
+        return currentAttachLayout;
+    }
+
     private AttachAlertLayout currentAttachLayout;
     private AttachAlertLayout nextAttachLayout;
 
@@ -1401,7 +1406,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             @Override
             protected void bottomPanelTranslationY(float translation) {
                 bottomPannelTranslation = translation;
-           //     buttonsRecyclerView.setTranslationY(translation);
+                //     buttonsRecyclerView.setTranslationY(translation);
                 frameLayout2.setTranslationY(translation);
                 writeButtonContainer.setTranslationY(translation);
                 selectedCountView.setTranslationY(translation);

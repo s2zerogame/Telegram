@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:layout_marginLeft="8dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginRight="8dp"
+    android:background="@drawable/popup_fixed_alert">
+
+    <TextView
+        android:id="@+id/panelNameTextView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="16dp"
+        android:text="TextView"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/seekBarCubic1"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginRight="16dp"
+        android:theme="@style/Theme.MaterialComponents.DayNight"
+        android:valueFrom="0"
+        android:valueTo="100"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/panelNameTextView"
+        app:thumbColor="#fff"
+        app:thumbElevation="4dp"
+        app:tickColor="#FFA500"
+        app:haloColor="#7C33B5E5"
+        app:trackColorActive="@color/wallet_holo_blue_light"
+        app:trackColorInactive="#DCD5D5"
+        app:trackHeight="1dp" />
+
+    <LinearLayout
+        android:id="@+id/graphView"
+        android:layout_width="match_parent"
+        android:layout_height="200dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginRight="16dp"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/seekBarCubic1">
+
+    </LinearLayout>
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/seekBarCubic2"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/transparent"
+        android:theme="@style/Theme.MaterialComponents.DayNight"
+        android:valueFrom="0"
+        android:valueTo="100"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@+id/seekBarCubic1"
+        app:layout_constraintStart_toStartOf="@+id/seekBarCubic1"
+        app:layout_constraintTop_toBottomOf="@+id/graphView"
+        app:thumbColor="#fff"
+        app:thumbElevation="4dp"
+        app:tickColor="#FFA500"
+        app:trackColorActive="@color/wallet_holo_blue_light"
+        app:trackColorInactive="#DCD5D5"
+        app:haloColor="#7C33B5E5"
+        app:trackHeight="1dp" />
+
+    <com.google.android.material.slider.RangeSlider
+        android:id="@+id/rangeSlider"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:theme="@style/Theme.MaterialComponents.DayNight"
+        android:valueFrom="0"
+        android:valueTo="100"
+        app:haloColor="#7C33B5E5"
+        app:layout_constraintBottom_toBottomOf="@+id/graphView"
+        app:layout_constraintEnd_toEndOf="@+id/graphView"
+        app:layout_constraintStart_toStartOf="@+id/graphView"
+        app:layout_constraintTop_toTopOf="@+id/graphView"
+        app:minSeparation="5dp"
+        app:thumbColor="#fff"
+        app:thumbElevation="4dp"
+        app:tickColor="#FFA500"
+        app:trackColor="#00DCD5D5">
+
+    </com.google.android.material.slider.RangeSlider>
+</androidx.constraintlayout.widget.ConstraintLayout>

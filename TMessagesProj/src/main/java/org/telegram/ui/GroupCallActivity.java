@@ -3510,6 +3510,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                     options.add(1);
                 }
             }
+
             if (participant.peer.channel_id != 0 && !ChatObject.isMegagroup(currentAccount, participant.peer.channel_id)) {
                 items.add(LocaleController.getString("VoipGroupOpenChannel", R.string.VoipGroupOpenChannel));
                 icons.add(R.drawable.msg_channel);
@@ -3520,6 +3521,7 @@ public class GroupCallActivity extends BottomSheet implements NotificationCenter
                 options.add(6);
             }
             if (!isAdmin && ChatObject.canBlockUsers(currentChat) && peerId > 0) {
+
                 items.add(LocaleController.getString("VoipGroupUserRemove", R.string.VoipGroupUserRemove));
                 icons.add(R.drawable.msg_block2);
                 options.add(2);

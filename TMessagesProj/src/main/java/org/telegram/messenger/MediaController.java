@@ -454,7 +454,7 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
     private static final float VOLUME_NORMAL = 1.0f;
     private static final int AUDIO_NO_FOCUS_NO_DUCK = 0;
     private static final int AUDIO_NO_FOCUS_CAN_DUCK = 1;
-    private static final int AUDIO_FOCUSED  = 2;
+    private static final int AUDIO_FOCUSED = 2;
 
     private static class VideoConvertMessage {
         public MessageObject messageObject;
@@ -1857,6 +1857,15 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                 FileLoader.getInstance(playingMessageObject.currentAccount).removeLoadingVideo(playingMessageObject.getDocument(), true, false);
             }
         }
+        else if (emojiSoundPlayer != null) {
+            try {
+                emojiSoundPlayer.releasePlayer(true);
+                emojiSoundPlayer = null;
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        }
+
         stopProgressTimer();
         lastProgress = 0;
         isPaused = false;
@@ -2723,6 +2732,9 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                         if (emojiSoundPlayer != null) {
                             emojiSoundPlayer.releasePlayer(true);
                         }
+                        if (playingMessageObject != null) {
+                            pauseMessage(playingMessageObject);
+                        }
                         emojiSoundPlayer = new VideoPlayer(false);
                         emojiSoundPlayer.setDelegate(new VideoPlayer.VideoPlayerDelegate() {
                             @Override
@@ -2736,6 +2748,17 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
                                             try {
                                                 emojiSoundPlayer.releasePlayer(true);
                                                 emojiSoundPlayer = null;
+                                                if (playingMessageObject != null && audioPlayer != null && isMessagePaused()) {
+                                                    if (playingMessageObject.isVoice()) {
+                                                        long seekTo = lastProgress;
+                                                        audioPlayer.releasePlayer(true);
+                                                        audioPlayer = null;
+                                                        playMessage(playingMessageObject);
+                                                        audioPlayer.seekTo(seekTo);
+                                                    } else {
+                                                        resumeAudio(playingMessageObject);
+                                                    }
+                                                }
                                             } catch (Exception e) {
                                                 FileLog.e(e);
                                             }
@@ -3313,6 +3336,15 @@ public class MediaController implements AudioManager.OnAudioFocusChangeListener,
         }
 
         try {
+            if (emojiSoundPlayer != null && audioPlayer != null && messageObject.isVoice()) {
+                try {
+                    emojiSoundPlayer.seekTo(emojiSoundPlayer.getDuration());
+                    return true;
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
+            }
+
             startProgressTimer(playingMessageObject);
             if (audioVolumeAnimator != null) {
                 audioVolumeAnimator.removeAllListeners();

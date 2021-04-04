@@ -721,7 +721,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
                 threadId = 0;
             }
             if (chat != null && info != null && info.participants != null && (!ChatObject.isChannel(chat) || chat.megagroup)) {
-                for (int a = (forSearch ? -1 : 0); a < info.participants.participants.size(); a++) {
+
                     String username;
                     String firstName;
                     String lastName;
@@ -762,8 +762,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
                             !TextUtils.isEmpty(firstName) && firstName.toLowerCase().startsWith(usernameString) ||
                             !TextUtils.isEmpty(lastName) && lastName.toLowerCase().startsWith(usernameString) ||
                             hasSpace && ContactsController.formatName(firstName, lastName).toLowerCase().startsWith(usernameString)) {
-                        newResult.add(object);
-                        newMap.put(id, object);
+                            newResult.add(object);
+                            newMap.put(id, object);
                     }
                 }
             }

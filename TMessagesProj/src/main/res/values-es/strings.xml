@@ -4300,6 +4300,7 @@
     <string name="RemindTodayAt">\'Recordar hoy a las\' HH:mm</string>
     <string name="RemindDayAt">\'Recordar el\' d \'de\' MMM \'a las\' HH:mm</string>
     <string name="RemindDayYearAt">\'Recordar el\' d \'de\' MMM \'de\' yyyy \'a las\' HH:mm</string>
+
     <string name="Permanent">Enlace primario</string>
     <string name="LinkHashExpired">El enlace ya no está activo</string>
     <string name="CancelForward">Cancelar reenvío</string>
@@ -4320,4 +4321,5 @@
     <string name="SwipeUnpin">Desfijar</string>
     <string name="SwipePin">Fijar</string>
     <string name="CancelForwarding">Cancelar reenvío</string>
+
 </resources>

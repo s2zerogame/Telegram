@@ -11,9 +11,11 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Build;
 import androidx.annotation.Keep;
+import androidx.core.view.ViewCompat;
 
 import android.os.SystemClock;
 import android.view.MotionEvent;
@@ -24,6 +26,9 @@ import android.view.animation.Interpolator;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.ui.BubbleActivity;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class CropAreaView extends View {
 
@@ -341,6 +346,34 @@ public class CropAreaView extends View {
             }
             invalidate();
         }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ViewCompat.setSystemGestureExclusionRects(this, getExcludeRects());
+        }
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
+        super.onLayout(changed, left, top, right, bottom);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ViewCompat.setSystemGestureExclusionRects(this, getExcludeRects());
+        }
+    }
+
+
+    private List<Rect> getExcludeRects() {
+        int center = (int) actualRect.centerY();
+        int top = (int) actualRect.top;
+        int bottom = (int) actualRect.bottom;
+        Rect excludes_top = new Rect(getLeft(), top - 5, getRight(), top + 50);
+        Rect excludes_center = new Rect(getLeft(), center - 45, getRight(), center + 45);
+        Rect excludes_bottom = new Rect(getLeft(), bottom - 50, getRight(), bottom + 5);
+        List<Rect> exclusionRects = new ArrayList<>(3);
+        exclusionRects.add(excludes_top);
+        exclusionRects.add(excludes_center);
+        exclusionRects.add(excludes_bottom);
+        return exclusionRects;
     }
 
     public void updateTouchAreas() {

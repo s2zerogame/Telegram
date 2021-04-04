@@ -4300,6 +4300,7 @@
     <string name="RemindTodayAt">\'Herinner vandaag om HH:mm</string>
     <string name="RemindDayAt">\'Herinner op\' d MMM \'om\' HH:mm</string>
     <string name="RemindDayYearAt">\'Herinner op\' d MMM yyyy \'om\' HH:mm</string>
+
     <string name="Permanent">Primary link</string>
     <string name="LinkHashExpired">Link is no longer active</string>
     <string name="CancelForward">Cancel Forward</string>
@@ -4320,4 +4321,5 @@
     <string name="SwipeUnpin">Unpin</string>
     <string name="SwipePin">Pin</string>
     <string name="CancelForwarding">Cancel Forwarding</string>
+
 </resources>

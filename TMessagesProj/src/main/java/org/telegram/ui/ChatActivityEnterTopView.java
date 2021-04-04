@@ -17,6 +17,10 @@ public class ChatActivityEnterTopView extends FrameLayout {
         super(context);
     }
 
+    public View getReplyView(){
+        return replyView;
+    }
+
     public void addReplyView(View replyView, LayoutParams layoutParams) {
         if (this.replyView == null) {
             addView(this.replyView = replyView, layoutParams);

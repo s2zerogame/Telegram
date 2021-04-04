@@ -129,6 +129,10 @@ import java.util.Locale;
 
 public class ChatActivityEnterView extends FrameLayout implements NotificationCenter.NotificationCenterDelegate, SizeNotifierFrameLayout.SizeNotifierFrameLayoutDelegate, StickersAlert.StickersAlertDelegate {
 
+
+    public View lastSelectedSticker;
+    public View lastSelectedGif;
+
     public interface ChatActivityEnterViewDelegate {
         void onMessageSend(CharSequence message, boolean notify, int scheduleDate);
 
@@ -332,6 +336,11 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     private LinearLayout attachLayout;
     private ImageView attachButton;
     private ImageView botButton;
+
+    public LinearLayout getTextFieldContainer() {
+        return textFieldContainer;
+    }
+
     private LinearLayout textFieldContainer;
     private FrameLayout sendButtonContainer;
     private FrameLayout doneButtonContainer;
@@ -351,6 +360,11 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     private MediaActionDrawable playPauseDrawable;
     private int searchingType;
     private Runnable focusRunnable;
+
+    public float getTopViewEnterProgress() {
+        return topViewEnterProgress;
+    }
+
     protected float topViewEnterProgress;
     protected int animatedTop;
     public ValueAnimator currentTopViewAnimation;
@@ -448,6 +462,10 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     private final Drawable doneCheckDrawable;
     boolean doneButtonEnabled = true;
     private ValueAnimator doneButtonColorAnimator;
+
+    public View getTopView() {
+        return topLineView;
+    }
 
     private Runnable openKeyboardRunnable = new Runnable() {
         @Override
@@ -1393,7 +1411,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             }
             drawingCircleRadius = radius;
         }
-        
+
         public void drawIcon(Canvas canvas, int cx, int cy, float alpha) {
             Drawable drawable;
             Drawable replaceDrawable = null;
@@ -3311,8 +3329,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                         }
                     }
                 });
-                currentTopViewAnimation.setDuration(220);
-                currentTopViewAnimation.setStartDelay(50);
+                //TODO sync
+                currentTopViewAnimation.setDuration(0);//220
+                currentTopViewAnimation.setStartDelay(0);
                 currentTopViewAnimation.setInterpolator(CubicBezierInterpolator.DEFAULT);
                 currentTopViewAnimation.start();
             } else {
@@ -6119,6 +6138,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     }
                     setStickersExpanded(false, true, false);
                 }
+                if(view != null){
+                    lastSelectedSticker = view;
+                }
                 ChatActivityEnterView.this.onStickerSelected(sticker, query, parent, false, notify, scheduleDate);
                 if ((int) dialog_id == 0 && MessageObject.isGifDocument(sticker)) {
                     accountInstance.getMessagesController().saveGif(parent, sticker);
@@ -6134,6 +6156,11 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
             @Override
             public void onGifSelected(View view, Object gif, String query, Object parent, boolean notify, int scheduleDate) {
+                if(view != null){
+                    lastSelectedGif = view;
+                }
+
+
                 if (isInScheduleMode() && scheduleDate == 0) {
                     AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), (n, s) -> onGifSelected(view, gif, query, parent, n, s));
                 } else {
@@ -7408,6 +7435,10 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
     public void checkAnimation() {
 
+    }
+
+    public long getAnimationDuration(){
+        return 220;
     }
 
     private class ScrimDrawable extends Drawable {

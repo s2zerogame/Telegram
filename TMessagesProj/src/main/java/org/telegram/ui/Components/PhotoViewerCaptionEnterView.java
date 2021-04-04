@@ -43,6 +43,7 @@ import androidx.core.graphics.ColorUtils;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.Emoji;
 import org.telegram.messenger.LocaleController;
+import org.telegram.messenger.MediaController;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.NotificationCenter;
 import org.telegram.messenger.FileLog;
@@ -241,22 +242,24 @@ public class PhotoViewerCaptionEnterView extends FrameLayout implements Notifica
 
             @Override
             public void onTextChanged(CharSequence charSequence, int start, int before, int count) {
-                if (lineCount != messageEditText.getLineCount()) {
-                    if (!isInitLineCount && messageEditText.getMeasuredWidth() > 0) {
-                        onLineCountChanged(lineCount, messageEditText.getLineCount());
+                if(messageEditText.hasFocus()) {
+                    if (lineCount != messageEditText.getLineCount()) {
+                        if (!isInitLineCount && messageEditText.getMeasuredWidth() > 0) {
+                            onLineCountChanged(lineCount, messageEditText.getLineCount());
+                        }
+                        lineCount = messageEditText.getLineCount();
                     }
-                    lineCount = messageEditText.getLineCount();
-                }
 
                 if (innerTextChange) {
                     return;
                 }
 
-                if (delegate != null) {
-                    delegate.onTextChanged(charSequence);
-                }
-                if (count - before > 1) {
-                    processChange = true;
+                    if (delegate != null) {
+                        delegate.onTextChanged(charSequence);
+                    }
+                    if (count - before > 1) {
+                        processChange = true;
+                    }
                 }
             }
 

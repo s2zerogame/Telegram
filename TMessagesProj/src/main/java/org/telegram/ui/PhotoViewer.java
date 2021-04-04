@@ -55,7 +55,9 @@ import androidx.collection.ArrayMap;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.ColorUtils;
+import androidx.core.view.OnApplyWindowInsetsListener;
 import androidx.core.view.ViewCompat;
+import androidx.core.view.WindowInsetsCompat;
 import androidx.core.widget.NestedScrollView;
 import androidx.dynamicanimation.animation.DynamicAnimation;
 import androidx.dynamicanimation.animation.SpringAnimation;
@@ -184,6 +186,7 @@ import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.Bulletin;
 import org.telegram.ui.Components.BulletinFactory;
 import org.telegram.ui.Components.ChatAttachAlert;
+import org.telegram.ui.Components.ChatAttachAlertPhotoLayout;
 import org.telegram.ui.Components.CheckBox;
 import org.telegram.ui.Components.ClippingImageView;
 import org.telegram.messenger.ImageReceiver;
@@ -3191,7 +3194,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 String finalPath = (String) args[1];
                 long finalSize = (Long) args[3];
                 float progress = (float) args[4];
-                photoProgressViews[0].setProgress(progress,true);
+                photoProgressViews[0].setProgress(progress, true);
                 if (finalSize != 0) {
                     requestingPreview = false;
                     photoProgressViews[0].setProgress(1f, true);
@@ -3364,7 +3367,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
         if (progressDrawables == null) {
             final Drawable circleDrawable = ContextCompat.getDrawable(parentActivity, R.drawable.circle_big);
+
             progressDrawables = new Drawable[] {
+
                     circleDrawable, // PROGRESS_EMPTY
                     ContextCompat.getDrawable(parentActivity, R.drawable.cancel_big), // PROGRESS_CANCEL
                     ContextCompat.getDrawable(parentActivity, R.drawable.load_big), // PROGRESS_LOAD
@@ -4225,9 +4230,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         bottomLayout.setBackgroundColor(0x7f000000);
         containerView.addView(bottomLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.BOTTOM | Gravity.LEFT));
 
-        pressedDrawable[0] = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, new int[] {0x32000000, 0});
+        pressedDrawable[0] = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, new int[]{0x32000000, 0});
         pressedDrawable[0].setShape(GradientDrawable.RECTANGLE);
-        pressedDrawable[1] = new GradientDrawable(GradientDrawable.Orientation.RIGHT_LEFT, new int[] {0x32000000, 0});
+        pressedDrawable[1] = new GradientDrawable(GradientDrawable.Orientation.RIGHT_LEFT, new int[]{0x32000000, 0});
         pressedDrawable[1].setShape(GradientDrawable.RECTANGLE);
 
         groupedPhotosListView = new GroupedPhotosListView(activityContext, AndroidUtilities.dp(10));
@@ -5484,6 +5489,27 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 if (placeProvider != null) {
                     placeProvider.onCaptionChanged(text);
                 }
+
+                try {
+                    ArrayList<Object> selectedPhotosOrder = placeProvider.getSelectedPhotosOrder();
+                    HashMap<Object, Object> selectedPhotos = placeProvider.getSelectedPhotos();
+
+                    if (selectedPhotosOrder != null && selectedPhotos != null
+                            && selectedPhotosOrder.size() > 0 && selectedPhotos.size() > 0) {
+
+                        Object key =  selectedPhotosOrder.get(0);
+                        MediaController.PhotoEntry o = (MediaController.PhotoEntry) selectedPhotos.get(key);
+
+                        if (o.caption.toString().equals(text.toString())) {
+                            parentAlert.updateCaption(text);
+                        }
+                    }
+                    else{
+                        parentAlert.updateCaption(text);
+                    }
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
             }
 
             @Override
@@ -6170,6 +6196,15 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             @Override
             protected void onDraw(Canvas canvas) {
                 videoPlayerSeekbar.draw(canvas);
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    Rect excludes = new Rect(videoPlayerSeekbarView.getLeft(), videoPlayerSeekbarView.getTop() - 50,
+                            videoPlayerSeekbarView.getRight(), videoPlayerSeekbarView.getBottom() + 100);
+                    List<Rect> exclusionRects = new ArrayList<>(1);
+                    exclusionRects.add(excludes);
+
+                    ViewCompat.setSystemGestureExclusionRects(this, exclusionRects);
+                }
             }
         };
         videoPlayerSeekbarView.setAccessibilityDelegate(accessibilityDelegate);
@@ -6180,6 +6215,16 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         videoPlayerSeekbar.setHorizontalPadding(AndroidUtilities.dp(2));
         videoPlayerSeekbar.setColors(0x33ffffff, 0x33ffffff, Color.WHITE, Color.WHITE, Color.WHITE, 0x59ffffff);
         videoPlayerSeekbar.setDelegate(seekBarDelegate);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            ViewCompat.setOnApplyWindowInsetsListener(videoPlayerSeekbarView, new OnApplyWindowInsetsListener() {
+                @Override
+                public WindowInsetsCompat onApplyWindowInsets(View v, WindowInsetsCompat insets) {
+                    v.setPadding(v.getPaddingLeft(), v.getPaddingTop(), v.getPaddingRight(), insets.getMandatorySystemGestureInsets().bottom);
+                    return insets;
+                }
+            });
+        }
 
         videoPreviewFrame = new VideoSeekPreviewImage(containerView.getContext(), () -> {
             if (needShowOnReady) {

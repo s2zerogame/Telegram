@@ -46,6 +46,9 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
+import org.telegram.ui.Cells.ChatMessageCell;
+
+import java.util.ArrayList;
 
 @SuppressWarnings("FieldCanBeLocal")
 public class UndoView extends FrameLayout {
@@ -73,7 +76,7 @@ public class UndoView extends FrameLayout {
     private int textWidth;
 
     private int currentAction;
-    private long currentDialogId;
+    private ArrayList<Long> dialogIds = new ArrayList<>();
     private Runnable currentActionRunnable;
     private Runnable currentCancelRunnable;
 
@@ -309,18 +312,23 @@ public class UndoView extends FrameLayout {
             if (apply) {
                 currentActionRunnable.run();
             }
-            currentActionRunnable = null;
         }
         if (currentCancelRunnable != null) {
             if (!apply) {
                 currentCancelRunnable.run();
             }
-            currentCancelRunnable = null;
         }
         if (currentAction == ACTION_CLEAR || currentAction == ACTION_DELETE) {
+
             MessagesController.getInstance(currentAccount).removeDialogAction(currentDialogId, currentAction == ACTION_CLEAR, apply);
             onRemoveDialogAction(currentDialogId, currentAction);
+
         }
+
+        currentActionRunnable = null;
+        currentCancelRunnable = null;
+        dialogIds.clear();
+
         if (animated != 0) {
             AnimatorSet animatorSet = new AnimatorSet();
             if (animated == 1) {
@@ -358,30 +366,46 @@ public class UndoView extends FrameLayout {
 
     }
 
+    public void showWithAction(long did, int action, Runnable actionRunnable, boolean many) {
+        showWithAction(did, action, null, null, actionRunnable, null, many);
+    }
+
     public void showWithAction(long did, int action, Runnable actionRunnable) {
-        showWithAction(did, action, null, null, actionRunnable, null);
+        showWithAction(did, action, null, null, actionRunnable, null, false);
     }
 
     public void showWithAction(long did, int action, Object infoObject) {
-        showWithAction(did, action, infoObject, null, null, null);
+        showWithAction(did, action, infoObject, null, null, null, false);
     }
 
     public void showWithAction(long did, int action, Runnable actionRunnable, Runnable cancelRunnable) {
-        showWithAction(did, action, null, null, actionRunnable, cancelRunnable);
+        showWithAction(did, action, null, null, actionRunnable, cancelRunnable, false);
     }
 
     public void showWithAction(long did, int action, Object infoObject, Runnable actionRunnable, Runnable cancelRunnable) {
-        showWithAction(did, action, infoObject, null, actionRunnable, cancelRunnable);
+        showWithAction(did, action, infoObject, null, actionRunnable, cancelRunnable, false);
     }
 
     public void showWithAction(long did, int action, Object infoObject, Object infoObject2, Runnable actionRunnable, Runnable cancelRunnable) {
-        if (currentActionRunnable != null) {
+        showWithAction(did, action, infoObject, null, actionRunnable, cancelRunnable, false);
+    }
+
+    public void showWithAction(ArrayList<Long>  didList, int action, Runnable actionRunnable) {
+        for (int i = 0; i < didList.size(); i++) {
+            long did = didList.get(i);
+            showWithAction(did, action, null, null, actionRunnable, null, true);
+        }
+    }
+
+
+    public void showWithAction(long did, int action, Object infoObject, Object infoObject2, Runnable actionRunnable, Runnable cancelRunnable, boolean many) {
+        if (!many && currentActionRunnable != null) {
             currentActionRunnable.run();
         }
         isShown = true;
         currentActionRunnable = actionRunnable;
         currentCancelRunnable = cancelRunnable;
-        currentDialogId = did;
+        dialogIds.add(did);
         currentAction = action;
         timeLeft = 5000;
         currentInfoObject = infoObject;
@@ -1003,7 +1027,7 @@ public class UndoView extends FrameLayout {
             if ("\uD83C\uDFB2".equals(emoji)) {
                 infoTextView.setText(AndroidUtilities.replaceTags(LocaleController.getString("DiceInfo2", R.string.DiceInfo2)));
                 leftImageView.setImageResource(R.drawable.dice);
-            } else{
+            } else {
                 if ("\uD83C\uDFAF".equals(emoji)) {
                     infoTextView.setText(AndroidUtilities.replaceTags(LocaleController.getString("DartInfo", R.string.DartInfo)));
                 } else {
@@ -1134,7 +1158,12 @@ public class UndoView extends FrameLayout {
                     if (ChatObject.isChannel(chat) && !chat.megagroup) {
                         infoTextView.setText(LocaleController.getString("ChannelDeletedUndo", R.string.ChannelDeletedUndo));
                     } else {
-                        infoTextView.setText(LocaleController.getString("GroupDeletedUndo", R.string.GroupDeletedUndo));
+                        if(many){
+                            infoTextView.setText(LocaleController.formatString("GroupsDeletedUndo", R.string.GroupsDeletedUndo,dialogIds.size()));
+                        }else{
+                            infoTextView.setText(LocaleController.getString("GroupDeletedUndo", R.string.GroupDeletedUndo));
+                        }
+
                     }
                 } else {
                     infoTextView.setText(LocaleController.getString("ChatDeletedUndo", R.string.ChatDeletedUndo));
