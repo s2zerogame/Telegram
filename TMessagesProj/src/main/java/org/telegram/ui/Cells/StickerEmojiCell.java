@@ -148,6 +148,10 @@ public class StickerEmojiCell extends FrameLayout implements NotificationCenter.
             stickerPath = path;
             if (path.validated) {
                 imageView.setImage(ImageLocation.getForPath(path.path), "80_80", null, null, DocumentObject.getSvgRectThumb(Theme.key_dialogBackgroundGray, 1.0f), null, path.animated ? "tgs" : null, 0, null);
+            } else if (path.video) {
+                ImageLocation imageLocation = ImageLocation.getForPath(path.path);
+                imageLocation.imageType = FileLoader.IMAGE_TYPE_ANIMATION;
+                imageView.setImage(imageLocation, "0", null, null, DocumentObject.getSvgRectThumb(Theme.key_dialogBackgroundGray, 1.0f), null, path.animated ? "tgs" : null, 0, null);
             } else {
                 imageView.setImage(null, null, null, null, DocumentObject.getSvgRectThumb(Theme.key_dialogBackgroundGray, 1.0f), null, path.animated ? "tgs" : null, 0, null);
             }
