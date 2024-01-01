@@ -21924,7 +21924,7 @@ CONTACT_VIEW = -1;
                 getLocationOnScreen(loc);
                 r.offset(loc[0],loc[1]);
                                 scrollBy(r.left, r.top);
-                //announceForAccessibility(getIterableTextForAccessibility());
+                //announceForAccessibility(accessibilityText);
             }
             return getAccessibilityNodeProvider().performAction(currentFocusedVirtualView,action,arguments);
                     }*/
@@ -21991,8 +21991,8 @@ CONTACT_VIEW = -1;
         event.setScrollX(getScrollX());
         event.setScrollY(getScrollY());
         if(seekBarAccessibilityDelegate!=null &&currentFocusedVirtualView==-1) seekBarAccessibilityDelegate.onInitializeAccessibilityEvent(ChatMessageCell.this,event);
-        CharSequence accText =getIterableTextForAccessibility();
-        if(event.getText().size() ==0) event.setContentDescription(accText);
+        setAccessibilityTextIfNeeded();
+        if(event.getText().size() ==0) event.setContentDescription(accessibilityText);
     }
 
     @Override
@@ -22044,8 +22044,7 @@ CONTACT_VIEW = -1;
     public int[] getCoords(Boolean back) {
         return getCoords(back,false);
     }
-    //To support diferents granularities for talkback. See sources of View class in android sdk sources.
-    public CharSequence getIterableTextForAccessibility() {
+    public void setAccessibilityTextIfNeeded() {
         final boolean unread = currentMessageObject != null && currentMessageObject.isOut() && !currentMessageObject.scheduled && currentMessageObject.isUnread();
         final boolean contentUnread = currentMessageObject != null && currentMessageObject.isContentUnread();
         final long fileSize = currentMessageObject != null ? currentMessageObject.loadedFileSize : 0;
@@ -22168,13 +22167,13 @@ CONTACT_VIEW = -1;
                     sb.append("\n");
                     sb.append(LocaleController.getString("AccDescrMsgSendingError", R.string.AccDescrMsgSendingError));
                 }
-            } else if(currentTimeString!=null) {
+            } else if(currentTimeString.length()>0) {
                 sb.append("\n");
                 sb.append(LocaleController.formatString("AccDescrReceivedDate", R.string.AccDescrReceivedDate, LocaleController.getString("TodayAt", R.string.TodayAt) + " " + currentTimeString));
             }
             if(currentMessageObject.isSponsored()) {
                 sb.append("\n");
-                sb.append(LocaleController.getString("Sponsored"));
+                sb.append(LocaleController.getString("SponsoredMessage",R.string.SponsoredMessage));
             }
             if (getRepliesCount() > 0 && !hasCommentLayout()) {
                 sb.append("\n");
@@ -22248,14 +22247,11 @@ CONTACT_VIEW = -1;
                 };
                 sb.setSpan(underlineSpan, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
             }
-            //if some info has changed,such as message become read or played,etc,update our variable.
-            //if(accessibilityText==null ||!sb.toString().equals(accessibilityText.toString())) accessibilityText = sb;
             accessibilityText = sb;
             accessibilityTextUnread = unread;
             accessibilityTextContentUnread = contentUnread;
             accessibilityTextFileSize = fileSize;
         }
-        return accessibilityText;
     }
 
     @Override
@@ -22571,7 +22567,7 @@ CONTACT_VIEW = -1;
             if (virtualViewId == HOST_VIEW_ID) {
                 AccessibilityNodeInfo info = AccessibilityNodeInfo.obtain(ChatMessageCell.this);
                 onInitializeAccessibilityNodeInfo(info);
-                if (accessibilityText == null) getIterableTextForAccessibility();
+                setAccessibilityTextIfNeeded();
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
                         info.setContentDescription(accessibilityText.toString());
                     } else {
